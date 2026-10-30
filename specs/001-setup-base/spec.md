@@ -16,7 +16,7 @@ Esta fase también cierra las decisiones de la constitución que afectan al regi
 - **Proyecto:** plugins de Tailwind v4 y alias `@/` → `src/` en Vite/TS; tokens de color de Limón en `src/index.css`; Prettier; script de pruebas para Vitest; cliente Supabase único en `src/lib/` con tipos generados.
 - **Supabase:** `supabase/` inicializado (config, migraciones, seed), entorno local funcional y proyecto remoto enlazado.
 - **Auth:** registro e inicio de sesión con email + contraseña, OAuth (ver D-02), confirmación de email, recuperación y restablecimiento de contraseña, cierre de sesión, persistencia y renovación de sesión.
-- **Perfil mínimo:** tabla `public.users` (`id`, `nombre`, `avatar`, `rol`, `created_at`) vinculada a `auth.users`, creada automáticamente al registrarse, con RLS.
+- **Perfil mínimo:** tabla `public.users` (`id`, `nombre`, `avatar`, `rol`, `terminos_aceptados_at`, `created_at`) vinculada a `auth.users`, creada automáticamente al registrarse, con RLS.
 - **Onboarding de rol** tras el primer inicio de sesión y **cambio de rol** posterior desde Perfil.
 - **Shell:** layout autenticado con pestañas inferiores (celular) y barra lateral (escritorio); rutas protegidas con placeholders para Feed, Publicar, Chat y Perfil; vistas de auth públicas; página 404; estados de carga y error globales.
 - **Infra:** `.env.example` versionado y `.env.local` ignorado; deploy en hosting con previews por PR; CI (lint + build + tests) en GitHub Actions; CSP y cabeceras de seguridad; reescritura SPA; URLs de redirección de Auth restringidas.
@@ -28,7 +28,8 @@ Esta fase también cierra las decisiones de la constitución que afectan al regi
 - Subida de avatar a Storage y edición completa de perfil (publicaciones, ofertas) → fase 7. En fase 1 solo se edita `nombre` y `rol`; `avatar` se rellena con la foto del proveedor OAuth si existe.
 - PWA instalable: manifest, íconos y Service Worker → fase 6/7 (ver D-08).
 - Verificación de teléfono o identidad, reseñas, pagos, contratos, mapa, app nativa y panel de administración (fuera del MVP).
-- Eliminación de cuenta por el usuario (ver Preguntas abiertas).
+- Eliminación de cuenta por el propio usuario → fase 7 (derecho de supresión, Ley 8968).
+- Captcha en el registro → se reevalúa antes de la beta (D-05).
 - Aplicación automática de migraciones al remoto desde CI (en fase 1 es manual, ver D-11).
 
 ## Usuarios y casos de uso
@@ -44,7 +45,7 @@ Esta fase también cierra las decisiones de la constitución que afectan al regi
 
 ### Autenticación
 
-- **RF-01** Registro con email, contraseña y nombre. Contraseña mínima de 8 caracteres [PENDIENTE: confirmar política; Supabase permite exigir mayúsculas/números/símbolos].
+- **RF-01** Registro con email, contraseña y nombre. Contraseña mínima de 8 caracteres, sin reglas adicionales de composición. El formulario exige marcar una casilla de aceptación de los Términos y el Aviso de Privacidad, y de ser mayor de 18 años (D-16).
 - **RF-02** Tras el registro con email, el usuario recibe un correo de confirmación y no puede iniciar sesión hasta confirmar (D-03). La pantalla posterior al registro indica revisar el correo y permite reenviar el enlace.
 - **RF-03** Inicio de sesión con email + contraseña.
 - **RF-04** Inicio de sesión / registro con OAuth (D-02). Si el email del proveedor coincide con una cuenta existente confirmada, se vincula a la misma cuenta (comportamiento estándar de Supabase); no se crea un segundo perfil.
@@ -56,15 +57,15 @@ Esta fase también cierra las decisiones de la constitución que afectan al regi
 
 ### Perfil y rol
 
-- **RF-10** Al crearse un usuario en `auth.users` se crea automáticamente su fila en `public.users` con el mismo `id`. `nombre` se toma del formulario de registro o del nombre del proveedor OAuth; `avatar` de la foto del proveedor si existe; `rol` queda sin definir.
-- **RF-11** Un usuario autenticado sin `rol` es redirigido al **onboarding de rol** desde cualquier ruta protegida. El onboarding ofrece tres opciones con una breve explicación: "Busco dónde vivir" (`buscador`), "Tengo una propiedad para alquilar" (`propietario`), "Ambas" (`ambos`). Si el `nombre` está vacío (p. ej., OAuth sin nombre), el onboarding también lo pide.
+- **RF-10** Al crearse un usuario en `auth.users` se crea automáticamente su fila en `public.users` con el mismo `id`. `nombre` se toma del formulario de registro o del nombre del proveedor OAuth; `avatar` de la foto del proveedor si existe; `rol` queda sin definir. `terminos_aceptados_at` guarda cuándo aceptó los Términos, el Aviso de Privacidad y la edad mínima: se llena al registrarse con email, y queda vacío para cuentas OAuth hasta que acepten en el onboarding.
+- **RF-11** Un usuario autenticado sin `rol` es redirigido al **onboarding de rol** desde cualquier ruta protegida. El onboarding ofrece tres opciones con una breve explicación: "Busco dónde vivir" (`buscador`), "Tengo una propiedad para alquilar" (`propietario`), "Ambas" (`ambos`). Si el `nombre` está vacío (p. ej., OAuth sin nombre), el onboarding también lo pide. Los usuarios que entraron por OAuth y no han aceptado los Términos, el Aviso de Privacidad y la edad mínima deben aceptarlos en el onboarding antes de continuar (D-16).
 - **RF-12** Tras completar el onboarding, el usuario llega al Feed y no vuelve a ver el onboarding.
 - **RF-13** En Perfil (placeholder), el usuario ve su nombre, avatar (o iniciales), email, rol actual y fecha de alta, y puede cambiar su `nombre` y su `rol` entre los tres valores. El cambio se refleja sin recargar.
 - **RF-14** En fase 1 el rol no cambia la navegación: las cuatro pestañas se muestran a todos. Qué ve cada rol se define en las specs de fases 3 y 4.
 
 ### Shell y navegación
 
-- **RF-15** Rutas públicas: inicio de sesión, registro, recuperar contraseña, restablecer contraseña, callback de Auth. Un usuario con sesión que entra a ellas es enviado al Feed (o al onboarding si no tiene rol).
+- **RF-15** Rutas públicas: inicio de sesión, registro, recuperar contraseña, restablecer contraseña, callback de Auth, Términos (`/terminos`) y Aviso de Privacidad (`/privacidad`). Las dos últimas son páginas estáticas accesibles con o sin sesión. Un usuario con sesión que entra a ellas es enviado al Feed (o al onboarding si no tiene rol).
 - **RF-16** Rutas protegidas: Feed (`/`), Publicar (`/publicar`), Chat (`/chat`), Perfil (`/perfil`) y onboarding. Sin sesión redirigen a inicio de sesión y, tras ingresar, vuelven a la ruta solicitada.
 - **RF-17** Mientras se resuelve la sesión inicial se muestra un estado de carga a pantalla completa (sin parpadeo del formulario de login para usuarios con sesión).
 - **RF-18** Layout autenticado: en celular, pestañas inferiores fijas con Feed, Publicar, Chat y Perfil; en escritorio (≥ `md`), barra lateral con logo CasaLimón y los mismos destinos. La pestaña/enlace activo se distingue visualmente y con `aria-current`.
@@ -74,19 +75,19 @@ Esta fase también cierra las decisiones de la constitución que afectan al regi
 ### Infraestructura
 
 - **RF-21** `supabase start` + `supabase db reset` levantan un entorno local con la migración de `users`, su trigger y RLS, y un seed con al menos dos usuarios de prueba (uno con rol y otro sin rol).
-- **RF-22** Proyecto Supabase remoto enlazado con la misma migración aplicada, proveedor OAuth configurado, plantillas de correo en español, SMTP propio (D-04) y lista de URLs de redirección restringida a producción, previews del proyecto y `localhost` de desarrollo.
+- **RF-22** Proyecto Supabase remoto enlazado con la misma migración aplicada, proveedor OAuth configurado, plantillas de correo en español, SMTP por defecto de Supabase en fase 1 (SMTP propio antes de la beta, ver D-04) y lista de URLs de redirección restringida a producción, previews del proyecto y `localhost` de desarrollo.
 - **RF-23** `.env.example` versionado con `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` y `VITE_VAPID_PUBLIC_KEY` (vacía hasta fase 6). `.env`, `.env.*` y `.env.local` ignorados por git (salvo `.env.example`); también se ignoran los artefactos locales de `supabase/` (p. ej. `.temp`, `.branches`).
-- **RF-24** Deploy en el hosting elegido (D-01): rama `master` → producción; cada PR → preview con URL propia. Las variables `VITE_*` se configuran en el hosting por entorno.
+- **RF-24** Deploy en el hosting elegido (D-01): rama `main` → producción; cada PR → preview con URL propia. Las variables `VITE_*` se configuran en el hosting por entorno.
 - **RF-25** El hosting sirve `index.html` para cualquier ruta de la SPA (deep links y recargas no dan 404 del servidor).
 - **RF-26** Cabeceras de seguridad en todas las respuestas: CSP restrictiva (solo orígenes propios, el proyecto Supabase por HTTPS y WSS, y los dominios de avatares del proveedor OAuth), `frame-ancestors 'none'`, HSTS, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin` y `Permissions-Policy` mínima.
-- **RF-27** GitHub Actions ejecuta en cada PR y en push a `master`: instalación con pnpm (lockfile congelado), `pnpm lint`, `pnpm build` y `pnpm vitest run`. Un fallo marca el PR en rojo. [PENDIENTE: ¿se activa protección de rama en `master` exigiendo checks verdes?]
+- **RF-27** GitHub Actions ejecuta en cada PR y en push a `main`: instalación con pnpm (lockfile congelado), `pnpm lint`, `pnpm build` y `pnpm vitest run`. Un fallo marca el PR en rojo. La rama `main` queda protegida: solo se integra por PR y con los checks en verde.
 
 ## Requisitos no funcionales
 
 - **Responsive:** mobile-first; probado a 375 px y a ≥ 1024 px. Pestañas inferiores respetan `safe-area-inset-bottom`; layout usa `min-h-dvh`.
 - **Accesibilidad:** formularios con `label` asociados, errores anunciados (`aria-live`/`aria-describedby`), foco visible, objetivos táctiles ≥ 44 px, contraste AA con los tokens de Limón, navegación completa por teclado. Navegación con `nav` y `aria-label`.
 - **Seguridad:** RLS habilitado en `public.users` con políticas por operación y `with check`; en el navegador solo la anon key; la service role key nunca aparece en el repo ni en variables `VITE_*`; flujo OAuth con PKCE; contenido de usuario (nombre) renderizado como texto.
-- **Rendimiento:** la pantalla de login es usable en < 3 s en 4G móvil típico (Lighthouse móvil, preview). [PENDIENTE: confirmar umbral]
+- **Rendimiento:** la pantalla de login es usable en < 3 s en 4G móvil típico (Lighthouse móvil, preview).
 - **Calidad:** TypeScript estricto sin `any`; lint, build y tests en verde; al menos pruebas de: guardas de rutas protegidas, redirección a onboarding sin rol y render del layout en ambos breakpoints.
 - **Idioma:** textos de UI y correos en español de Costa Rica; columnas y valores de dominio en español (`nombre`, `rol = 'buscador'`).
 
@@ -94,7 +95,7 @@ Esta fase también cierra las decisiones de la constitución que afectan al regi
 
 ### Registro e inicio de sesión
 
-- **CA-01** Dado un visitante en `/registro`, cuando envía nombre, email válido y contraseña de ≥ 8 caracteres, entonces ve "Revisá tu correo para confirmar la cuenta" (texto final según D-12), se envía un correo en español y existe una fila en `public.users` con ese `id`, `nombre` y `rol` nulo.
+- **CA-01** Dado un visitante en `/registro`, cuando envía nombre, email válido y contraseña de ≥ 8 caracteres, y marca la casilla de Términos, Privacidad y edad, entonces ve "Revisá tu correo para confirmar la cuenta", se envía un correo en español y existe una fila en `public.users` con ese `id`, `nombre` y `rol` nulo.
 - **CA-02** Dado un visitante que se registró y no confirmó, cuando intenta iniciar sesión, entonces ve un mensaje de que debe confirmar su correo y una opción para reenviar el enlace.
 - **CA-03** Dado un usuario que hace clic en el enlace de confirmación, cuando se abre la app, entonces queda con sesión iniciada y llega al onboarding de rol.
 - **CA-04** Dado un visitante en `/registro`, cuando usa un email ya registrado, entonces no se crea un segundo usuario ni perfil y ve un mensaje genérico en español sin datos técnicos.
@@ -149,42 +150,38 @@ Esta fase también cierra las decisiones de la constitución que afectan al regi
 - **CA-38** Dada una URL de redirección arbitraria (dominio ajeno), cuando se pasa como `redirectTo` a Supabase Auth, entonces Supabase no redirige a ella.
 - **CA-39** Dada cualquier respuesta del preview o producción, cuando se inspeccionan las cabeceras, entonces incluyen CSP, HSTS, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy` y `frame-ancestors 'none'`, y la consola del navegador no muestra violaciones de CSP durante login, OAuth y navegación.
 - **CA-40** Dado el repositorio, cuando se buscan secretos, entonces no hay ningún `.env` con valores reales versionado ni la service role key en código, configuración o variables `VITE_*`.
+- **CA-41** Dado un push directo a `main` o un PR con algún check en rojo, cuando se intenta integrar, entonces GitHub lo rechaza.
+
+### Términos y privacidad
+
+- **CA-42** Dado un visitante en `/registro`, cuando completa todo pero no marca la casilla de Términos, Privacidad y edad, entonces no se envía la solicitud y ve el error junto a la casilla.
+- **CA-43** Dado un usuario nuevo que entró con Google, cuando llega al onboarding, entonces no puede continuar sin aceptar los Términos, el Aviso de Privacidad y la edad mínima.
+- **CA-44** Dado cualquier visitante, con o sin sesión, cuando abre `/terminos` o `/privacidad` (también desde los enlaces del registro), entonces ve la página en español.
 
 ## Decisiones y riesgos
 
 | ID | Tema | Decisión | Justificación |
 |---|---|---|---|
-| D-01 | Hosting | **Vercel** (previews por PR nativos con GitHub, cabeceras y rewrites en `vercel.json`). [PENDIENTE: confirmación final] | Es lo propuesto en la constitución; menor configuración para un solo desarrollador. Netlify y Cloudflare Pages son equivalentes funcionales; Cloudflare tiene ancho de banda más generoso pero no es decisivo en beta. Riesgo: plan Hobby es para uso no comercial; si CasaLimón se monetiza habrá que pasar a Pro o migrar. La toolbar de Vercel en previews inyecta scripts: se desactiva o se contempla en la CSP de previews. |
-| D-02 | Proveedor(es) OAuth | **Google** como único proveedor en el MVP. [PENDIENTE: confirmar; evaluar Facebook] | Google es el más universal en Android (mayoría del mercado en CR) y el más simple de configurar. Facebook es muy usado en Limón, pero su revisión de app agrega fricción; se puede añadir después sin cambios de modelo. Apple no se incluye (solo obligatorio en apps nativas iOS). |
+| D-01 | Hosting | **Vercel** (previews por PR nativos con GitHub, cabeceras y rewrites en `vercel.json`), plan Hobby durante el MVP. | Es lo propuesto en la constitución; menor configuración para un solo desarrollador. Netlify y Cloudflare Pages son equivalentes funcionales; Cloudflare tiene ancho de banda más generoso pero no es decisivo en beta. Riesgo: plan Hobby es para uso no comercial; si CasaLimón se monetiza habrá que pasar a Pro o migrar. La toolbar de Vercel en previews inyecta scripts: se desactiva o se contempla en la CSP de previews. |
+| D-02 | Proveedor(es) OAuth | **Google** como único proveedor en el MVP. Facebook se puede agregar después. | Google es el más universal en Android (mayoría del mercado en CR) y el más simple de configurar. Facebook es muy usado en Limón, pero su revisión de app agrega fricción; se puede añadir después sin cambios de modelo. Apple no se incluye (solo obligatorio en apps nativas iOS). |
 | D-03 | Confirmación de email | **Obligatoria** para cuentas email + contraseña. Cuentas OAuth llegan con email verificado por el proveedor. | Confianza (riesgo de la constitución): garantiza un contacto real y reduce cuentas desechables y spam. Coste: fricción en el registro y dependencia de la entrega de correos (ver D-04). |
-| D-04 | Envío de correos | **SMTP propio** en el proyecto remoto (no el servidor de correo por defecto de Supabase). [PENDIENTE: proveedor (p. ej. Resend, Brevo) y dominio remitente] | El servicio por defecto de Supabase tiene un límite muy bajo de envíos por hora y no es apto para usuarios reales; con confirmación obligatoria (D-03) un fallo de correo bloquea el registro. Requiere un dominio propio con SPF/DKIM. |
-| D-05 | Moderación — captcha en registro | **No se activa en fase 1.** Mitigación: confirmación de email (D-03) + rate limits de Supabase Auth. Se reevalúa antes de la beta (fase 8) o al detectar abuso; Supabase soporta Turnstile/hCaptcha sin cambiar el modelo. [PENDIENTE: confirmar] | En fase 1 no hay contenido publicable (no hay posts), así que el spam no tiene superficie. Un captcha agrega fricción y un tercero en la CSP. La moderación de contenido (reportar, límite de posts) se decide en fase 3. |
+| D-04 | Envío de correos | **Fase 1:** en local, los correos los atrapa la bandeja de prueba de Supabase local (no se envía nada real); en el proyecto remoto y los previews se usa el SMTP por defecto de Supabase, solo para el equipo. **Antes de la beta (fase 8):** comprar dominio propio y configurar SMTP propio (Resend propuesto) con SPF/DKIM en ese dominio. | El SMTP por defecto de Supabase tiene un límite muy bajo de envíos y solo entrega a miembros del equipo: suficiente para desarrollar, no apto para usuarios reales; con confirmación obligatoria (D-03) un fallo de correo bloquea el registro. Aún no hay dominio propio, y no se necesita hasta que entren usuarios reales. El mismo dominio se usará luego para la web. |
+| D-05 | Moderación — captcha en registro | **No se activa en fase 1.** Mitigación: confirmación de email (D-03) + rate limits de Supabase Auth. Se reevalúa antes de la beta (fase 8) o al detectar abuso; Supabase soporta Turnstile/hCaptcha sin cambiar el modelo. | En fase 1 no hay contenido publicable (no hay posts), así que el spam no tiene superficie. Un captcha agrega fricción y un tercero en la CSP. La moderación de contenido (reportar, límite de posts) se decide en fase 3. |
 | D-06 | Confianza — verificación de teléfono | **Fuera del MVP.** | Requiere proveedor SMS de pago y aumenta fricción. La confianza en el MVP se apoya en email verificado (D-03) y en mostrar la antigüedad de la cuenta (`created_at`) en el perfil (se expone en fase 7). Verificación de identidad está explícitamente fuera del MVP. |
 | D-07 | Idioma de correos de Auth | **Español de Costa Rica**, con plantillas personalizadas en Supabase (local en `supabase/config.toml` y remoto en el proyecto), asunto y remitente "CasaLimón". | Coherencia con la UI; el correo en inglés por defecto genera desconfianza y parece spam. |
 | D-08 | PWA / manifest en fase 1 | **No se registra manifest ni Service Worker en fase 1**; solo favicon, `<title>`, `lang="es-CR"` y `theme-color`. El manifest y la instalación van en fase 7; el SW se introduce en fase 6 junto con Web Push. | Un SW con caché durante las fases tempranas complica la verificación de previews (versiones viejas servidas). Agruparlo con push evita registrar dos veces la estrategia de SW. Web Push en iOS depende de la PWA instalada: no aplica en esta fase, se decide en 6–7. |
-| D-09 | Datos mínimos de perfil | **`nombre` obligatorio** (texto, longitud 2–60 [PENDIENTE: confirmar]); **`avatar` opcional** (URL del proveedor OAuth en fase 1; subida propia en fase 7); `rol` obligatorio tras onboarding. Sin teléfono, sin apellidos separados. | Mínimo para identificar a la contraparte en feed y chat. Menos datos personales = menos obligaciones bajo la Ley 8968 de protección de datos. |
-| D-10 | Frontera con fase 2 | Fase 1 crea solo `public.users` + trigger de alta + RLS (lectura: autenticados; actualización: solo el propio usuario, sin cambiar `id`/`created_at`; insert solo por trigger; sin delete). Fase 2 crea el resto de tablas y puede ajustar `users` solo mediante migraciones nuevas. | Auth y onboarding necesitan el perfil desde ya; el resto del modelo no se usa hasta fase 3. La lectura por autenticados anticipa la necesidad de mostrar autor en feed/chat. |
-| D-11 | Entornos Supabase | **Un solo proyecto remoto** compartido por previews y producción durante fases 1–7; antes de la beta (fase 8) se evalúa separar staging y producción. Migraciones al remoto con `supabase db push` manual. [PENDIENTE: confirmar] | Plan gratuito limitado a pocos proyectos activos y no hay usuarios reales hasta la beta. Riesgo: un preview con migración rota afecta a "producción"; mitigado porque solo se hace push tras merge. Nota: proyectos gratuitos se pausan tras inactividad. |
-| D-12 | Tratamiento en la UI | [PENDIENTE: ¿"vos" o "usted"?] Los ejemplos de esta spec usan voseo provisionalmente. | Afecta todos los textos y correos; conviene fijarlo antes de escribir las plantillas. |
+| D-09 | Datos mínimos de perfil | **`nombre` obligatorio**: el nombre con el que la persona quiere que la vean (no necesariamente el nombre completo), de 2 a 60 caracteres; **`avatar` opcional** (URL del proveedor OAuth en fase 1; subida propia en fase 7); `rol` obligatorio tras onboarding. Sin teléfono, sin apellidos separados. | Mínimo para identificar a la contraparte en feed y chat. Menos datos personales = menos obligaciones bajo la Ley 8968 de protección de datos. |
+| D-10 | Frontera con fase 2 | Fase 1 crea solo `public.users` + trigger de alta + RLS (lectura: autenticados; actualización: solo el propio usuario, sin cambiar `id`/`created_at`; insert solo por trigger; sin delete). Fase 2 crea el resto de tablas y puede ajustar `users` solo mediante migraciones nuevas. | Se agrega `terminos_aceptados_at` a `users` (no estaba en la constitución) para registrar el consentimiento de la Ley 8968 (D-16); ya quedó reflejado en la constitución. Auth y onboarding necesitan el perfil desde ya; el resto del modelo no se usa hasta fase 3. La lectura por autenticados anticipa la necesidad de mostrar autor en feed/chat. |
+| D-11 | Entornos Supabase | **Un solo proyecto remoto** compartido por previews y producción durante fases 1–7; antes de la beta (fase 8) se evalúa separar staging y producción. Migraciones al remoto con `supabase db push` manual. | Plan gratuito limitado a pocos proyectos activos y no hay usuarios reales hasta la beta. Riesgo: un preview con migración rota afecta a "producción"; mitigado porque solo se hace push tras merge. Nota: proyectos gratuitos se pausan tras inactividad. |
+| D-12 | Tratamiento en la UI | **Voseo** ("vos") en todos los textos de la interfaz y los correos. | Es lo natural en Costa Rica y da un tono cercano, acorde con el público de estudiantes y trabajadores. |
 | D-13 | Retención | No aplica en fase 1. | No hay posts ni ofertas. |
 | D-14 | Adopción | No aplica en fase 1, salvo: el registro con Google reduce fricción de entrada. Enlaces compartibles por WhatsApp se tratan en fase 3/8. | — |
 | D-15 | Web Push en iOS | No aplica en fase 1 (ver D-08). | — |
-| D-16 | Privacidad y términos | [PENDIENTE] ¿El registro exige aceptar Términos y Aviso de Privacidad (Ley 8968)? Si sí, ¿quién redacta los textos y dónde se alojan? | Recolectamos nombre, email y foto; en beta con usuarios reales probablemente sea necesario. No bloquea la estructura técnica pero sí los CA de registro. |
+| D-16 | Privacidad y términos | **Sí:** casilla obligatoria en el registro (y en el onboarding para cuentas OAuth) que acepta los Términos y el Aviso de Privacidad y declara ser mayor de 18 años. Los textos son páginas estáticas en `/terminos` y `/privacidad`. En fase 1 son textos simples redactados por el autor; antes de la beta conviene una revisión legal. La eliminación de cuenta entra en fase 7. | Recolectamos nombre, email y foto: la Ley 8968 exige consentimiento informado y da derecho de supresión. Los 18 años evitan tratar datos de menores en un servicio de alquiler, que implica contratos. |
 
 ## Preguntas abiertas
 
-- [PENDIENTE: D-01] ¿Se confirma Vercel como hosting (plan Hobby en el MVP)?
-- [PENDIENTE: D-02] ¿Google es el único proveedor OAuth del MVP o se agrega Facebook?
-- [PENDIENTE: D-04] ¿Qué proveedor SMTP y qué dominio/remitente se usan para los correos de Auth? ¿Existe ya un dominio propio (también para producción en el hosting)?
-- [PENDIENTE: D-05] ¿Se acepta posponer el captcha de registro hasta antes de la beta?
-- [PENDIENTE: D-09] ¿Longitud permitida para `nombre` (propuesta 2–60) y se pide nombre completo o solo como quiere que lo vean?
-- [PENDIENTE: D-11] ¿Un solo proyecto Supabase remoto hasta la beta, o staging + producción desde ya?
-- [PENDIENTE: D-12] Tratamiento en textos de UI y correos: ¿"vos" o "usted"?
-- [PENDIENTE: D-16] ¿Se requiere aceptación de Términos y Aviso de Privacidad en el registro? ¿Hay edad mínima?
-- [PENDIENTE: RF-01] Política de contraseña: ¿solo mínimo 8 caracteres o también exigir letras y números?
-- [PENDIENTE: RF-27] ¿Se activa protección de rama en `master` con checks obligatorios y merge solo por PR?
-- [PENDIENTE: RNF rendimiento] ¿Se acepta el umbral de < 3 s en 4G para la pantalla de login?
-- [PENDIENTE] Eliminación de cuenta por el propio usuario: ¿fuera del MVP o se incluye en fase 7? (relevante para Ley 8968).
+Ninguna. Todas las preguntas se resolvieron con el autor el 2026-10-29.
 
 ---
 

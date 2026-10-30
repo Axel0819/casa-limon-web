@@ -123,7 +123,7 @@ PK `uuid` en todas las tablas; usuarios referenciados por el `id` de Supabase Au
 
 | Tabla | Campos | Notas |
 |---|---|---|
-| users | id, nombre, avatar, rol, created_at | rol: `buscador` / `propietario` / `ambos` |
+| users | id, nombre, avatar, rol, terminos_aceptados_at, created_at | rol: `buscador` / `propietario` / `ambos`; `terminos_aceptados_at` registra el consentimiento (Ley 8968, spec 001) |
 | posts | id, user_id, texto, presupuesto_min, presupuesto_max, zona, tags[], estado, created_at | estado: `activa` / `resuelta` / `cerrada` |
 | properties | id, owner_id, titulo, precio, zona, fotos[], descripcion, disponible, created_at | fotos = rutas en Storage |
 | offers | id, post_id, property_id, owner_id, mensaje, estado, created_at | estado: `enviada` / `vista` / `aceptada` / `rechazada` |
