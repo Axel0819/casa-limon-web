@@ -19,7 +19,7 @@ Todas las PK son `uuid default gen_random_uuid()`; los usuarios referencian `aut
 
 | Tabla | Campos clave |
 |---|---|
-| users | id (= auth.users.id), nombre, avatar, rol (`buscador`/`propietario`/`ambos`), created_at |
+| users | id (= auth.users.id), nombre, avatar, rol (`buscador`/`propietario`/`ambos`), terminos_aceptados_at, created_at |
 | posts | user_id, texto, presupuesto_min, presupuesto_max, zona, tags text[], estado (`activa`/`resuelta`/`cerrada`) |
 | properties | owner_id, titulo, precio, zona, fotos text[] (rutas en Storage), descripcion, disponible |
 | offers | post_id, property_id, owner_id, mensaje, estado (`enviada`/`vista`/`aceptada`/`rechazada`) |
@@ -39,6 +39,13 @@ Usa `check` constraints o enums para los estados, `created_at timestamptz defaul
 - notifications / push_subscriptions: cada usuario solo las suyas.
 - Storage: cada usuario sube solo a su carpeta `<uid>/...`; lectura pública del bucket de fotos de propiedades.
 - Usa `(select auth.uid())` (no `auth.uid()` directo) para rendimiento; políticas separadas por operación (select/insert/update/delete) con `with check` en insert/update.
+
+## Lecciones de revisiones de seguridad
+
+- `raw_user_meta_data` lo controla el cliente (también vía `auth.updateUser({ data })`): valida tipo, longitud y formato antes de copiarlo a tablas, y nunca uses `auth.jwt()->'user_metadata'` en políticas. Para saber el proveedor real usa `raw_app_meta_data`.
+- `users.rol` lo elige el propio usuario: no es autorización. La propiedad de cada fila sale de `owner_id`/`user_id = (select auth.uid())`.
+- Todo texto visible a otros usuarios (nombres, títulos) lleva check sobre el valor guardado: recortado, longitud máxima, sin caracteres de control ni de dirección de texto.
+- Nunca ejecutes `seed.sql` contra el remoto (`db push` sin `--include-seed`).
 
 ## Triggers y Edge Functions
 

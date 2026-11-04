@@ -174,7 +174,7 @@ Claude Code es el agente principal, con `CLAUDE.md` como contexto persistente. S
 | Subagente | Responsabilidad |
 |---|---|
 | spec-writer | Redacta specs |
-| planner | Spec aprobada → plan + tareas |
+| sdd-planner | Spec aprobada → plan + tareas |
 | schema-rls | Migraciones, RLS, Storage, Edge Functions |
 | ui-screens | Vistas y componentes React + Tailwind |
 | security-reviewer | Revisión de RLS, claves, CSP, auth |

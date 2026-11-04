@@ -22,7 +22,7 @@ pnpm supabase gen types typescript --local > src/lib/database.types.ts
 1. Toda feature vive en `specs/NNN-<slug>/` con `spec.md`, `plan.md`, `tasks.md` (skill `sdd-feature`).
 2. **No generes plan ni código si la spec no tiene `Estado: Aprobada`.** Si el usuario pide implementar algo sin spec aprobada, avísale y ofrece redactarla.
 3. Delegación a subagentes (`.claude/agents/`):
-   - `spec-writer` → redacta specs · `planner` → plan y tareas
+   - `spec-writer` → redacta specs · `sdd-planner` → plan y tareas
    - `schema-rls` → todo lo de `supabase/` · `ui-screens` → vistas y componentes en `src/`
    - `security-reviewer` → antes de cerrar fases que toquen datos/auth/deploy · `qa-reviewer` → al cerrar tareas y fases
 4. Marca tareas `[x]` en `tasks.md` solo después de verificar (lint, build, tests, revisión).

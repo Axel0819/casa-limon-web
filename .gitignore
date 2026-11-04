@@ -22,3 +22,19 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Variables de entorno (solo se versiona la plantilla)
+.env
+.env.*
+!.env.example
+
+# Vercel
+.vercel
+
+# Pruebas
+coverage
+
+# Supabase local
+supabase/.temp
+supabase/.branches
+supabase/.env

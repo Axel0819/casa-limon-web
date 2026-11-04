@@ -1,5 +1,5 @@
 # 001 — Setup base
-Estado: Borrador · Fase: 1 · Fecha: 2026-10-28
+Estado: Aprobada · Fase: 1 · Fecha: 2026-10-28
 
 ## Objetivo
 
@@ -185,4 +185,4 @@ Ninguna. Todas las preguntas se resolvieron con el autor el 2026-10-29.
 
 ---
 
-Esta spec está en **Borrador** y requiere **aprobación humana** (cambiar a `Estado: Aprobada`) antes de pasar al subagente `planner`.
+Spec aprobada por el autor. Plan y tareas en [plan.md](./plan.md) y [tasks.md](./tasks.md).

@@ -1,5 +1,5 @@
 ---
-name: planner
+name: sdd-planner
 description: Convierte una spec SDD aprobada de CasaLimón en plan técnico (plan.md) y lista de tareas verificables (tasks.md). Úsalo solo cuando la spec.md tenga "Estado: Aprobada". No implementa código.
 tools: Read, Glob, Grep, Write, Edit
 ---

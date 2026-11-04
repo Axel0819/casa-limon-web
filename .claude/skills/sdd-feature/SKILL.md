@@ -1,6 +1,6 @@
 ---
 name: sdd-feature
-description: Flujo Spec-Driven Development de CasaLimón. Crea la carpeta specs/NNN-slug con spec.md, plan.md y tasks.md usando las plantillas del proyecto, y orquesta los subagentes (spec-writer → aprobación humana → planner → schema-rls/ui-screens → security-reviewer/qa-reviewer). Úsala al iniciar una fase o feature nueva.
+description: Flujo Spec-Driven Development de CasaLimón. Crea la carpeta specs/NNN-slug con spec.md, plan.md y tasks.md usando las plantillas del proyecto, y orquesta los subagentes (spec-writer → aprobación humana → sdd-planner → schema-rls/ui-screens → security-reviewer/qa-reviewer). Úsala al iniciar una fase o feature nueva.
 ---
 
 # Feature SDD en CasaLimón
@@ -11,7 +11,7 @@ Cada fase del MVP se trabaja como una o varias features con tres artefactos en `
 
 1. **Spec** → subagente `spec-writer` crea `spec.md` (Estado: Borrador).
 2. **Checkpoint humano** → el usuario revisa y cambia el estado a `Aprobada`. No se genera plan ni código antes de esto. Pregunta al usuario si no está claro.
-3. **Plan** → subagente `planner` crea `plan.md` y `tasks.md`.
+3. **Plan** → subagente `sdd-planner` crea `plan.md` y `tasks.md`.
 4. **Implementación** → `schema-rls` (supabase/) y `ui-screens` (src/) por tarea, en orden.
 5. **Revisión** → `security-reviewer` (si toca datos/auth/deploy) y `qa-reviewer`. Marca las tareas `[x]` solo tras su veredicto.
 

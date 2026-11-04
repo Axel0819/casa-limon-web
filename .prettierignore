@@ -1,0 +1,9 @@
+dist
+coverage
+pnpm-lock.yaml
+src/lib/database.types.ts
+supabase/.temp
+
+# Documentación SDD mantenida por el autor y los agentes; no se reformatea automáticamente.
+specs
+.claude

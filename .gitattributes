@@ -1,0 +1,15 @@
+# Finales de línea LF en el repositorio y en la copia de trabajo, en cualquier sistema.
+# Evita falsos rojos de `pnpm format:check` (Prettier usa LF) entre Windows y CI.
+* text=auto eol=lf
+
+# Binarios: sin conversión de finales de línea ni diffs de texto.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.avif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.pdf binary
